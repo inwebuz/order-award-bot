@@ -1,0 +1,84 @@
+// Variables
+@import 'variables';
+
+// Bootstrap
+@import '~bootstrap/scss/bootstrap';
+//@import '~air-datepicker/src/sass/datepicker';
+@import '~air-datepicker/dist/css/datepicker.css';
+@import '~bootstrap-select/sass/bootstrap-select';
+
+html,
+body {
+    height: 100%;
+}
+
+#page-content {
+    flex: 1 0 auto;
+}
+
+#sticky-footer {
+    flex-shrink: unset;
+}
+
+body.payment-page {
+	td {
+		p {
+			margin: 0;
+		}
+	}
+}
+.bootstrap-select {
+    > .btn-light {
+        background-color: #fff;
+        border: 1px solid #ced4da;
+    }
+}
+@media print {
+	@page {
+		size: 290mm 750mm
+	}
+	html {
+		margin: 0;
+		padding: 0;
+	}
+    body.payment-page {
+    	font-family: Calibri, Arial, sans-serif;
+		color: #000;
+		width: 290mm;
+		font-size: 16px;
+		line-height: 1.125;
+		font-weight: 700;
+		padding: 0;
+		margin: 0;
+        .container {
+            padding: 0;
+        }
+        h1 {
+            font-size: 70px;
+			font-weight: 700;
+        }
+        .py-4 {
+            padding: 0;
+        }
+        table {
+        	width: 290mm;
+			border: none!important;
+			border-color: #fff;
+        }
+        td {
+            padding: 0;
+			border: none!important;
+			border-color: #fff;
+			display: block;
+            &:first-child {
+                
+            }
+            &:last-child {
+            	padding-bottom: 1mm;
+            }
+        }
+        p {
+        	font-weight: bold;
+        }
+    }
+}
