@@ -34,6 +34,11 @@ class Helper
         return __($date->format('F')) . ' ' . $date->format('d' . $yearFormat);
     }
 
+    public static function formatDateTime(Carbon $date)
+    {
+        return $date->format('d.m.Y H:i');
+    }
+
     public static function formatDateSecond(Carbon $date)
     {
         return '<div>' . $date->format('d') . '</div><div>' . __($date->format('F')) . '</div>';

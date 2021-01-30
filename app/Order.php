@@ -16,7 +16,7 @@ class Order extends Model
     {
         return [
             self::STATUS_OPEN => __('Status Open'),
-            self::STATUS_REJECTED => __('Status Rejected'),
+            // self::STATUS_REJECTED => __('Status Rejected'),
             self::STATUS_CLOSE => __('Status Closed'),
         ];
     }
@@ -24,5 +24,10 @@ class Order extends Model
     public function getStatusTextAttribute()
     {
         return $this->statuses()[$this->status];
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
     }
 }

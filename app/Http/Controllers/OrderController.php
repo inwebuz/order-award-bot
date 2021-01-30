@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Category;
+use App\Order;
 use App\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -19,8 +21,67 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $products = Product::with('category')->latest()->paginate(50);
-        return view('products.index', compact('products'));
+        $periodFrom = $request->input('period_from', Carbon::now()->subMonths(3)->startOfDay());
+        $periodTo = $request->input('period_to', Carbon::now()->endOfDay());
+        if (is_string($periodFrom)) {
+            $periodFrom = Carbon::createFromFormat('d.m.Y', $periodFrom)->startOfDay();
+        }
+        if (is_string($periodTo)) {
+            $periodTo = Carbon::createFromFormat('d.m.Y', $periodTo)->endOfDay();
+        }
+        $filter = [
+            'period_from' => $periodFrom,
+            'period_to' => $periodTo,
+            'first_name' => $request->input('first_name', ''),
+            'last_name' => $request->input('last_name', ''),
+            'phone_number' => $request->input('phone_number', ''),
+            'id' => $request->input('id', ''),
+            'status' => $request->input('status', '-'),
+        ];
+        $query = Order::latest();
+
+        $query->where('created_at', '>=', $filter['period_from']->format('Y-m-d H:i:s'))
+              ->where('created_at', '<=', $filter['period_to']->format('Y-m-d H:i:s'));
+
+        if ($filter['first_name']) {
+            $query->where('first_name', 'LIKE', '%' . $filter['first_name'] . '%');
+        }
+        if ($filter['last_name']) {
+            $query->where('last_name', 'LIKE', '%' . $filter['last_name'] . '%');
+        }
+        if ($filter['phone_number']) {
+            $query->where('phone_number', 'LIKE', '%' . $filter['phone_number'] . '%');
+        }
+        if ($filter['id']) {
+            $query->where('id', $filter['id']);
+        }
+        if ($filter['status'] != '-') {
+            $query->where('status', $filter['status']);
+        }
+
+        $queryClone = clone $query;
+        $orders = $query->paginate(10);
+
+        $ordersAll = $queryClone->get();
+
+        $stats = [
+            'all' => [
+                'quantity' => $ordersAll->count(),
+                'sum' => $ordersAll->sum('total'),
+            ],
+            'open' => [
+                'quantity' => $ordersAll->where('status', Order::STATUS_OPEN)->count(),
+                'sum' => $ordersAll->where('status', Order::STATUS_OPEN)->sum('total'),
+            ],
+            'close' => [
+                'quantity' => $ordersAll->where('status', Order::STATUS_CLOSE)->count(),
+                'sum' => $ordersAll->where('status', Order::STATUS_CLOSE)->sum('total'),
+            ],
+        ];
+
+
+
+        return view('orders.index', compact('orders', 'filter', 'stats'));
     }
 
     /**
@@ -30,9 +91,9 @@ class OrderController extends Controller
      */
     public function create()
     {
-        $product = new Product();
-        $categories = $this->categories();
-        return view('products.create', compact('product', 'categories'));
+        $order = new Order();
+        $products = $this->products();
+        return view('orders.create', compact('order', 'products'));
     }
 
     /**
@@ -43,103 +104,88 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $this->validatedData($request, [
-            'url' => 'required|image',
-        ]);
-        $data['image_file_id'] = '';
-
-        $urlImage = $request->file('url');
-        if ($urlImage) {
-            $data['url'] = $urlImage->store('', 'telegrambot');
-        }
-
-        Product::create($data);
-        return redirect($this->page)->with('success', 'Product saved');
+        $data = $this->validatedData($request);
+        Order::create($data);
+        return redirect($this->page)->with('success', 'Order saved');
     }
 
     /**
      * Display the specified resource.
      *
-     * @param int $product
+     * @param int $order
      * @return \Illuminate\Http\Response
      */
-    public function show($product)
+    public function show(Order $order)
     {
-        return view('products.show', compact('product'));
+        return view('orders.show', compact('order'));
     }
 
     /**
      * Show the form for editing the specified resource.
      *
-     * @param int $product
+     * @param int $order
      * @return \Illuminate\Http\Response
      */
-    public function edit($productID)
+    public function edit(Order $order)
     {
-        $product = Product::with('category')->findOrFail($productID);
-        $categories = $this->categories();
-        return view('products.edit', compact('product', 'categories'));
+        $products = $this->products();
+        return view('orders.edit', compact('order', 'products'));
     }
 
     /**
      * Update the specified resource in storage.
      *
      * @param \Illuminate\Http\Request $request
-     * @param int $product
+     * @param int $order
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $productID)
+    public function update(Request $request, Order $order)
     {
         $data = $this->validatedData($request);
-        $product = Product::findOrFail($productID);
-        $urlImage = $request->file('url');
-        if ($urlImage) {
-            // delete old image
-            if ($product->url) {
-                Storage::disk('telegrambot')->delete($product->url);
-            }
-            // save new image
-            $data['url'] = $urlImage->store('', 'telegrambot');
-        }
-        $product->update($data);
-        return redirect($this->page)->with('success', 'Product saved');
+        $order->update($data);
+        return redirect($this->page)->with('success', 'Order saved');
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param int $product
+     * @param int $order
      * @return \Illuminate\Http\Response
      */
-    public function destroy($productID)
+    public function destroy(Order $order)
     {
         // delete old image
-        $product = Product::findOrFail($productID);
-        if ($product->url) {
-            Storage::disk('telegrambot')->delete($product->url);
-        }
-        $product->delete();
-        return redirect($this->page)->with('success', 'Product deleted');
+        $order->delete();
+        return redirect($this->page)->with('success', 'Order deleted');
     }
 
     private function validatedData(Request $request, $options = [])
     {
         $rules = [
-            'title' => 'required|max:191',
-            'description' => 'max:191',
-            'price' => 'required|numeric',
-            'catalog_id' => 'required|integer',
-            'url' => 'image',
+            'product_id' => 'required',
+            'quantity' => 'required|integer',
+            'products_info' => 'required|max:65536',
+            'first_name' => 'required|max:191',
+            'last_name' => 'required|max:191',
+            'phone_number' => 'required|max:191',
+            'info' => '',
+            'status' => 'required|in:-1,0,1',
         ];
         $rules = array_merge($rules, $options);
-        return $request->validate($rules, [
+        $data = $request->validate($rules, [
             '*.required' => __('Required field'),
             '*.image' => __('Upload an image'),
         ]);
+
+        $product = Product::findOrFail($data['product_id']);
+        $data['info'] = $product->name;
+        $data['total'] = $product->price * $data['quantity'];
+
+        return $data;
     }
 
-    private function categories()
+    private function products()
     {
-        return Category::orderBy('title')->get();
+        return Product::orderBy('name')->get();
     }
 }
