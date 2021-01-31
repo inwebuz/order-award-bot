@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Category;
+use App\Helpers\BotHelper;
+use App\Helpers\Helper;
 use App\Order;
 use App\Product;
+use Box\Spout\Writer\Common\Creator\WriterEntityFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -21,48 +24,13 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $periodFrom = $request->input('period_from', Carbon::now()->subMonths(3)->startOfDay());
-        $periodTo = $request->input('period_to', Carbon::now()->endOfDay());
-        if (is_string($periodFrom)) {
-            $periodFrom = Carbon::createFromFormat('d.m.Y', $periodFrom)->startOfDay();
-        }
-        if (is_string($periodTo)) {
-            $periodTo = Carbon::createFromFormat('d.m.Y', $periodTo)->endOfDay();
-        }
-        $filter = [
-            'period_from' => $periodFrom,
-            'period_to' => $periodTo,
-            'first_name' => $request->input('first_name', ''),
-            'last_name' => $request->input('last_name', ''),
-            'phone_number' => $request->input('phone_number', ''),
-            'id' => $request->input('id', ''),
-            'status' => $request->input('status', '-'),
-        ];
-        $query = Order::latest();
-
-        $query->where('created_at', '>=', $filter['period_from']->format('Y-m-d H:i:s'))
-              ->where('created_at', '<=', $filter['period_to']->format('Y-m-d H:i:s'));
-
-        if ($filter['first_name']) {
-            $query->where('first_name', 'LIKE', '%' . $filter['first_name'] . '%');
-        }
-        if ($filter['last_name']) {
-            $query->where('last_name', 'LIKE', '%' . $filter['last_name'] . '%');
-        }
-        if ($filter['phone_number']) {
-            $query->where('phone_number', 'LIKE', '%' . $filter['phone_number'] . '%');
-        }
-        if ($filter['id']) {
-            $query->where('id', $filter['id']);
-        }
-        if ($filter['status'] != '-') {
-            $query->where('status', $filter['status']);
-        }
+        $filter = $this->getFilter($request);
+        $query = $this->generateQuery($request);
 
         $queryClone = clone $query;
         $orders = $query->paginate(10);
 
-        $ordersAll = $queryClone->get();
+        $ordersAll = $queryClone->select('id', 'total', 'status')->get();
 
         $stats = [
             'all' => [
@@ -79,9 +47,57 @@ class OrderController extends Controller
             ],
         ];
 
-
-
         return view('orders.index', compact('orders', 'filter', 'stats'));
+    }
+
+    public function download(Request $request)
+    {
+        $filter = $this->getFilter($request);
+        $query = $this->generateQuery($request);
+        $ordersAll = $query->get();
+
+        $writer = WriterEntityFactory::createXLSXWriter();
+        // $writer = WriterEntityFactory::createODSWriter();
+        // $writer = WriterEntityFactory::createCSVWriter();
+
+        $fileName = 'Orders-' . $filter['period_from']->format('d.m.Y') . '-' . $filter['period_to']->format('d.m.Y') . '.xlsx';
+        // $writer->openToFile($filePath); // write data to a file or to a PHP stream
+        $writer->openToBrowser($fileName); // stream data directly to the browser
+
+        $values = [
+            __('Order number'),
+            __('Date'),
+            __('Status'),
+            __('First name'),
+            __('Last name'),
+            __('Phone number'),
+            __('Product'),
+            __('Quantity'),
+            __('Products info'),
+            __('Total'),
+        ];
+        $rowFromValues = WriterEntityFactory::createRowFromArray($values);
+        $writer->addRow($rowFromValues);
+
+        foreach ($ordersAll as $order) {
+            $values = [
+                $order->id,
+                Helper::formatDateTime($order->created_at),
+                $order->status_text,
+                $order->first_name,
+                $order->last_name,
+                $order->phone_number,
+                $order->product->name,
+                $order->quantity,
+                $order->products_info,
+                $order->total,
+            ];
+            $rowFromValues = WriterEntityFactory::createRowFromArray($values);
+            $writer->addRow($rowFromValues);
+        }
+
+        $writer->close();
+        exit();
     }
 
     /**
@@ -187,5 +203,52 @@ class OrderController extends Controller
     private function products()
     {
         return Product::orderBy('name')->get();
+    }
+
+    private function generateQuery(Request $request) {
+        $filter = $this->getFilter($request);
+        $query = Order::latest();
+
+        $query->where('created_at', '>=', $filter['period_from']->format('Y-m-d H:i:s'))
+              ->where('created_at', '<=', $filter['period_to']->format('Y-m-d H:i:s'));
+
+        if ($filter['first_name']) {
+            $query->where('first_name', 'LIKE', '%' . $filter['first_name'] . '%');
+        }
+        if ($filter['last_name']) {
+            $query->where('last_name', 'LIKE', '%' . $filter['last_name'] . '%');
+        }
+        if ($filter['phone_number']) {
+            $query->where('phone_number', 'LIKE', '%' . $filter['phone_number'] . '%');
+        }
+        if ($filter['id']) {
+            $query->where('id', $filter['id']);
+        }
+        if ($filter['status'] != '-') {
+            $query->where('status', $filter['status']);
+        }
+
+        return $query;
+    }
+
+    private function getFilter(Request $request) {
+        $periodFrom = $request->input('period_from', Carbon::now()->subMonths(3)->startOfDay());
+        $periodTo = $request->input('period_to', Carbon::now()->endOfDay());
+        if (is_string($periodFrom)) {
+            $periodFrom = Carbon::createFromFormat('d.m.Y', $periodFrom)->startOfDay();
+        }
+        if (is_string($periodTo)) {
+            $periodTo = Carbon::createFromFormat('d.m.Y', $periodTo)->endOfDay();
+        }
+        $filter = [
+            'period_from' => $periodFrom,
+            'period_to' => $periodTo,
+            'first_name' => $request->input('first_name', ''),
+            'last_name' => $request->input('last_name', ''),
+            'phone_number' => $request->input('phone_number', ''),
+            'id' => $request->input('id', ''),
+            'status' => $request->input('status', '-'),
+        ];
+        return $filter;
     }
 }

@@ -45,7 +45,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="text-center">{{ __('Nothing Found') }}</td>
+                        <td colspan="8" class="text-center">{{ __('Nothing found') }}</td>
                     </tr>
                 @endforelse
             </table>
