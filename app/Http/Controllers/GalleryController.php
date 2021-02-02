@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Category;
-use App\Product;
+use App\Gallery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -19,8 +18,8 @@ class GalleryController extends Controller
      */
     public function index(Request $request)
     {
-        $products = Product::with('category')->latest()->paginate(50);
-        return view('products.index', compact('products'));
+        $galleries = Gallery::latest()->paginate(50);
+        return view('galleries.index', compact('galleries'));
     }
 
     /**
@@ -30,9 +29,8 @@ class GalleryController extends Controller
      */
     public function create()
     {
-        $product = new Product();
-        $categories = $this->categories();
-        return view('products.create', compact('product', 'categories'));
+        $gallery = new Gallery();
+        return view('galleries.create', compact('gallery'));
     }
 
     /**
@@ -43,103 +41,92 @@ class GalleryController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $this->validatedData($request, [
-            'url' => 'required|image',
-        ]);
+        $data = $this->validatedData($request);
         $data['image_file_id'] = '';
 
-        $urlImage = $request->file('url');
+        $urlImage = $request->file('image');
         if ($urlImage) {
-            $data['url'] = $urlImage->store('', 'telegrambot');
+            $data['image'] = $urlImage->store('galleries', 'public');
         }
 
-        Product::create($data);
-        return redirect($this->page)->with('success', 'Product saved');
+        Gallery::create($data);
+        return redirect($this->page)->with('success', 'Gallery saved');
     }
 
     /**
      * Display the specified resource.
      *
-     * @param int $product
+     * @param int $gallery
      * @return \Illuminate\Http\Response
      */
-    public function show($product)
+    public function show($gallery)
     {
-        return view('products.show', compact('product'));
+        return view('galleries.show', compact('gallery'));
     }
 
     /**
      * Show the form for editing the specified resource.
      *
-     * @param int $product
+     * @param int $gallery
      * @return \Illuminate\Http\Response
      */
-    public function edit($productID)
+    public function edit($galleryID)
     {
-        $product = Product::with('category')->findOrFail($productID);
-        $categories = $this->categories();
-        return view('products.edit', compact('product', 'categories'));
+        $gallery = Gallery::findOrFail($galleryID);
+        return view('galleries.edit', compact('gallery'));
     }
 
     /**
      * Update the specified resource in storage.
      *
      * @param \Illuminate\Http\Request $request
-     * @param int $product
+     * @param int $gallery
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $productID)
+    public function update(Request $request, $galleryID)
     {
         $data = $this->validatedData($request);
-        $product = Product::findOrFail($productID);
-        $urlImage = $request->file('url');
+        $gallery = Gallery::findOrFail($galleryID);
+        $urlImage = $request->file('image');
         if ($urlImage) {
             // delete old image
-            if ($product->url) {
-                Storage::disk('telegrambot')->delete($product->url);
+            if ($gallery->image) {
+                Storage::disk('public')->delete($gallery->image);
             }
             // save new image
-            $data['url'] = $urlImage->store('', 'telegrambot');
+            $data['image'] = $urlImage->store('galleries', 'public');
         }
-        $product->update($data);
-        return redirect($this->page)->with('success', 'Product saved');
+        $gallery->update($data);
+        return redirect($this->page)->with('success', 'Gallery saved');
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param int $product
+     * @param int $gallery
      * @return \Illuminate\Http\Response
      */
-    public function destroy($productID)
+    public function destroy($galleryID)
     {
         // delete old image
-        $product = Product::findOrFail($productID);
-        if ($product->url) {
-            Storage::disk('telegrambot')->delete($product->url);
+        $gallery = Gallery::findOrFail($galleryID);
+        if ($gallery->image) {
+            Storage::disk('public')->delete($gallery->image);
         }
-        $product->delete();
-        return redirect($this->page)->with('success', 'Product deleted');
+        $gallery->delete();
+        return redirect($this->page)->with('success', 'Gallery deleted');
     }
 
     private function validatedData(Request $request, $options = [])
     {
         $rules = [
-            'title' => 'required|max:191',
-            'description' => 'max:191',
-            'price' => 'required|numeric',
-            'catalog_id' => 'required|integer',
-            'url' => 'image',
+            'name' => 'required|max:191',
+            'image' => 'image',
         ];
         $rules = array_merge($rules, $options);
         return $request->validate($rules, [
             '*.required' => __('Required field'),
             '*.image' => __('Upload an image'),
         ]);
-    }
-
-    private function categories()
-    {
-        return Category::orderBy('title')->get();
     }
 }

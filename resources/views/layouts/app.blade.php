@@ -35,6 +35,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('orders.index') }}">{{ __('Orders') }}</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('galleries.index') }}">{{ __('Our products') }}</a>
+                        </li>
                         {{-- <li class="nav-item">
                             <a class="nav-link" href="{{ route('reviews.index') }}">{{ __('Reviews') }}</a>
                         </li> --}}

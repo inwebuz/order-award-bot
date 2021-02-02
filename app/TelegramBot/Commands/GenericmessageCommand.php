@@ -22,8 +22,10 @@ use Longman\TelegramBot\Commands\UserCommands\CartCommand;
 use Longman\TelegramBot\Commands\UserCommands\OrderCommand;
 use Longman\TelegramBot\Commands\UserCommands\SettingCommand;
 use Longman\TelegramBot\Commands\UserCommands\FreeConsultingCommand;
+use Longman\TelegramBot\Commands\UserCommands\GalleryCommand;
 use Longman\TelegramBot\Commands\UserCommands\HelpCommand;
 use Longman\TelegramBot\Commands\UserCommands\NewsCommand;
+use Longman\TelegramBot\Commands\UserCommands\PriceCommand;
 
 /**
  * Generic message command
@@ -97,9 +99,12 @@ class GenericmessageCommand extends SystemCommand
             }
             $update['message']['text'] = '/start set_language:' . $newLang;
             return (new StartCommand($this->telegram, new Update($update)))->preExecute();
-        } elseif ($text === BotHelper::t('Button Info Aparto', $lang)) {
-            $update['message']['text'] = '/info';
-            return (new InfoCommand($this->telegram, new Update($update)))->preExecute();
+        } elseif ($text === BotHelper::t('Button Service price', $lang)) {
+            $update['message']['text'] = '/price';
+            return (new PriceCommand($this->telegram, new Update($update)))->preExecute();
+        } elseif ($text === BotHelper::t('Button Our products', $lang)) {
+            $update['message']['text'] = '/gallery';
+            return (new GalleryCommand($this->telegram, new Update($update)))->preExecute();
         } elseif ($text === BotHelper::t('Button Catalog', $lang) || $text === '📂') {
             $update['message']['text'] = '/catalogue';
             return (new CatalogueCommand($this->telegram, new Update($update)))->preExecute();

@@ -7,6 +7,7 @@ use App\Helpers\BotHelper;
 use App\Helpers\Helper;
 use App\Order;
 use App\Product;
+use Box\Spout\Reader\Common\Creator\ReaderEntityFactory;
 use Box\Spout\Writer\Common\Creator\WriterEntityFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -98,6 +99,57 @@ class OrderController extends Controller
 
         $writer->close();
         exit();
+    }
+
+    public function upload(Request $request)
+    {
+        return view('orders.upload');
+    }
+
+    public function uploadStore(Request $request)
+    {
+        $request->validate([
+            'upload' => 'required|mimes:xlsx',
+        ]);
+        $request->file('upload')->storeAs('uploads', 'orders-upload.xlsx');
+        $uploadedQuantity = 0;
+
+        $filePath = Storage::path('uploads/orders-upload.xlsx');
+        $reader = ReaderEntityFactory::createXLSXReader();
+        $reader->open($filePath);
+        foreach ($reader->getSheetIterator() as $sheet) {
+            foreach ($sheet->getRowIterator() as $key => $row) {
+                if ($key == 1) {
+                    // title row
+                    continue;
+                }
+                $cells = $row->getCells();
+                $productID = $cells[3]->getValue();
+                $product = Product::where('id', $productID)->first();
+                if (!$product) {
+                    continue;
+                }
+                $quantity = (int)$cells[4]->getValue();
+                $data = [
+                    'product_id' => $product->id,
+                    'info' => $product->name,
+                    'total' => $product->price * $quantity,
+                    'first_name' => $cells[0]->getValue(),
+                    'last_name' => $cells[1]->getValue(),
+                    'phone_number' => $cells[2]->getValue(),
+                    'quantity' => $quantity,
+                    'products_info' => $cells[5]->getValue(),
+                    'status' => Order::STATUS_OPEN,
+                ];
+                $order = Order::create($data);
+                $uploadedQuantity++;
+            }
+            break;
+        }
+
+        $reader->close();
+
+        return redirect()->route('orders.index')->with('success', __('Orders uploaded') . ': ' . $uploadedQuantity);
     }
 
     /**

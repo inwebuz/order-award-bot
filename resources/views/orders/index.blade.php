@@ -15,6 +15,9 @@
             <a href="{{ route('orders.create') }}" class="btn btn-lg btn-info">
                 {{ __('Add order') }}
             </a>
+            <a href="{{ route('orders.upload') }}" class="btn btn-lg btn-info">
+                {{ __('Orders upload') }}
+            </a>
         </div>
 
 

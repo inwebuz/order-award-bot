@@ -24,7 +24,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/', "HomeController@index")->name('home');
     // Route::resource('categories', 'CategoryController');
     Route::resource('products', 'ProductController');
+    Route::get('profile', 'ProfileController@index')->name('profile.index');
     Route::get('orders/download', 'OrderController@download')->name('orders.download');
+    Route::get('orders/upload', 'OrderController@upload')->name('orders.upload');
+    Route::post('orders/upload/store', 'OrderController@uploadStore')->name('orders.upload.store');
     Route::resource('orders', 'OrderController');
     // Route::resource('reviews', 'ReviewController');
     Route::resource('users', 'UserController');

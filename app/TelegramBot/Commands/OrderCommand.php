@@ -295,46 +295,6 @@ class OrderCommand extends UserCommand
 
                 } else {
 
-                    $managerMessage = '*' . BotHelper::t('New order', $lang) . '*' . "\n";
-                    $managerMessage .= $this->getConfirmText($notes, $lang);
-
-                    // send message to admins group
-                    $adminChatID = config('services.telegram.chat_id');
-                    Request::sendMessage([
-                        'chat_id' => $adminChatID,
-                        'text' => $managerMessage,
-                        'parse_mode' => 'Markdown',
-                    ]);
-
-                    // send message to manager
-                    // $manager_ids = $this->getConfig('store_manager_id');
-                    // $getUserChatId = $pdo->prepare('SELECT `chat_id` FROM ' . TB_USER_CHAT . ' WHERE `user_id` = :user_id');
-                    // $getChatId = $pdo->prepare("SELECT `id`, `type` FROM " . TB_CHAT . " WHERE `id` = :id AND `type` = 'private'");
-                    // foreach ($manager_ids as $manager_id) {
-                    //     $getUserChatId->bindValue(':user_id', $manager_id);
-                    //     $getUserChatId->execute();
-                    //     if ($getUserChatId->rowCount() > 0) {
-                    //         $manager_private_chat_id = 0;
-                    //         $manager_chat_ids = $getUserChatId->fetchAll();
-                    //         foreach ($manager_chat_ids as $manager_chat_id) {
-                    //             $getChatId->bindValue(':id', $manager_chat_id['chat_id']);
-                    //             $getChatId->execute();
-                    //             if ($getChatId->rowCount() > 0) {
-                    //                 $manager_private_chat_id = $getChatId->fetch()['id'];
-                    //                 break;
-                    //             }
-                    //         }
-                    //         if ($manager_private_chat_id == 0) {
-                    //             continue;
-                    //         }
-                    //         Request::sendMessage([
-                    //             'chat_id' => $manager_private_chat_id,
-                    //             'text' => $managerMessage,
-                    //             'parse_mode' => 'Markdown',
-                    //         ]);
-                    //     }
-                    // }
-
                     // save to admin
                     $orderData = [
                         'product_id' => $notes['product_id'],
@@ -357,6 +317,17 @@ class OrderCommand extends UserCommand
                             $orderData['info'] .= 'Username: ' . $tgUsername . "\n";
                         }
                         $order = Order::create($orderData);
+
+                        // send message to admins group
+                        $adminChatID = config('services.telegram.chat_id');
+                        $adminMessage = '*' . BotHelper::t('New order', $lang) . '*' . "\n";
+                        $adminMessage .= 'ID: ' . $order->id . "\n";
+                        $adminMessage .= $this->getConfirmText($notes, $lang);
+                        Request::sendMessage([
+                            'chat_id' => $adminChatID,
+                            'text' => $adminMessage,
+                            'parse_mode' => 'Markdown',
+                        ]);
 
                         // send request accepted message to user
                         $data['text'] = BotHelper::t('Order accepted', $lang) . '!' . "\n";

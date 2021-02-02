@@ -18,13 +18,9 @@ class UsersTableSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         factory(User::class)->create([
-            'name' => 'Admin',
-            'email' => 'admin2@admin.com',
-        ]);
-
-        factory(User::class)->create([
             'name' => 'Administrator',
-            'email' => 'admin@admin.com',
+            'email' => 'admin@nagrada.zipwolf.uz',
+            'password' => bcrypt('T4d7n2YAeepGVC28'),
         ]);
 
         // factory(User::class)->create([

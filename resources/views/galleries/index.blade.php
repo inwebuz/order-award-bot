@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', __('Products'))
+@section('title', __('Our products'))
 
 @section('content')
     <div class="container">
@@ -12,40 +12,36 @@
         @endif
 
         <div class="my-4">
-            <a href="{{ route('products.create') }}" class="btn btn-lg btn-info">
-                {{ __('Add product') }}
+            <a href="{{ route('galleries.create') }}" class="btn btn-lg btn-info">
+                {{ __('Add') }}
             </a>
         </div>
 
 
-        <h1>{{ __('Products') }}</h1>
+        <h1>{{ __('Our products') }}</h1>
         <div class="table-responsive">
             <table class="table table-bordered table-light table-hover">
                 <tr class="table-active">
                     <th>
-                        {{ __('Title') }}
+                        {{ __('Name') }}
                     </th>
                     <th>
-                        {{ __('Description') }}
+                        {{ __('Image') }}
                     </th>
-                    <th>
-                        {{ __('Price') }}
-                    </th>
-                    {{-- <th>
-                        {{ __('Category') }}
-                    </th> --}}
                     <th></th>
                 </tr>
-                @forelse($products as $product)
+                @forelse($galleries as $gallery)
                     <tr>
-                        <td>{{ $product->name }} @if($product->button_text) ({{ $product->button_text }}) @endif</td>
-                        <td>{{ $product->description }}</td>
-                        <td>{{ $product->price }}</td>
-                        {{-- <td>{{ $product->category->title }}</td> --}}
+                        <td>{{ $gallery->name }} </td>
+                        <td>
+                            @if($gallery->image)
+                                <img src="{{ Storage::disk('public')->url($gallery->image) }}" alt="" style="max-width: 100px; height: auto;">
+                            @endif
+                        </td>
                         <td class="text-nowrap">
-                            <a href="{{ route('products.edit', ['product' => $product->id]) }}" class="btn btn-sm btn-warning">{{ __('Edit') }}</a>
-                            <a href="#" onclick="event.preventDefault(); if (confirm('{{ __('Are you sure?') }}')) { $('#delete-product-{{ $product->id }}').submit() }" class="btn btn-sm btn-danger">{{ __('Delete') }}</a>
-                            <form action="{{ route('products.destroy', ['product' => $product->id]) }}" method="post" id="delete-product-{{ $product->id }}">
+                            <a href="{{ route('galleries.edit', ['gallery' => $gallery->id]) }}" class="btn btn-sm btn-warning">{{ __('Edit') }}</a>
+                            <a href="#" onclick="event.preventDefault(); if (confirm('{{ __('Are you sure?') }}')) { $('#delete-gallery-{{ $gallery->id }}').submit() }" class="btn btn-sm btn-danger">{{ __('Delete') }}</a>
+                            <form action="{{ route('galleries.destroy', ['gallery' => $gallery->id]) }}" method="post" id="delete-gallery-{{ $gallery->id }}">
                                 @csrf
                                 @method('DELETE')
                             </form>
@@ -59,7 +55,7 @@
             </table>
         </div>
 
-            {{ $products->links() }}
+            {{ $galleries->links() }}
 
 
         <br>

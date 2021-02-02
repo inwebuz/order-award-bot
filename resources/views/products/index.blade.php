@@ -23,6 +23,9 @@
             <table class="table table-bordered table-light table-hover">
                 <tr class="table-active">
                     <th>
+                        {{ __('ID') }}
+                    </th>
+                    <th>
                         {{ __('Title') }}
                     </th>
                     {{-- <th>
@@ -38,6 +41,7 @@
                 </tr>
                 @forelse($products as $product)
                     <tr>
+                        <td>{{ $product->id }}</td>
                         <td>{{ $product->name }} @if($product->button_text) ({{ $product->button_text }}) @endif</td>
                         {{-- <td>{{ $product->description }}</td> --}}
                         <td>{{ BotHelper::formatPrice($product->price) }} / {{ $product->unitsSingular }}</td>

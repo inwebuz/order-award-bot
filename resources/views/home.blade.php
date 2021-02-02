@@ -16,6 +16,7 @@
                         {{-- <a class="btn btn-info" href="{{ route('categories.index') }}">{{ __('Categories') }}</a> --}}
                         <a class="btn btn-lg btn-info" href="{{ route('products.index') }}">{{ __('Products') }}</a>
                         <a class="btn btn-lg btn-info" href="{{ route('orders.index') }}">{{ __('Orders') }}</a>
+                        <a class="btn btn-lg btn-info" href="{{ route('galleries.index') }}">{{ __('Our products') }}</a>
                         {{-- <a class="btn btn-info" href="{{ route('reviews.index') }}">{{ __('Reviews') }}</a> --}}
 
                 </div>
