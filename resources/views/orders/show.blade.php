@@ -76,6 +76,18 @@
                         {{ $order->products_info }}
                     </td>
                 </tr>
+                @if ($order->image)
+                    <tr>
+                        <td>
+                            <strong>{{ __('Photo') }}</strong>
+                        </td>
+                        <td>
+                            <a href="{{ Storage::url($order->image) }}" target="_blank">
+                                <img src="{{ Storage::url($order->image) }}" alt="" style="max-width: 200px;" class="img-fluid">
+                            </a>
+                        </td>
+                    </tr>
+                @endif
                 <tr>
                     <td>
                         <strong>{{ __('Total') }}</strong>
@@ -99,6 +111,21 @@
                 </tr>
             </table>
         </div>
+
+        @if ($order->status == \App\Order::STATUS_OPEN)
+            <div class="py-4 d-print-none">
+                <form action="{{ route('orders.close', ['order' => $order->id]) }}" method="post">
+                    @csrf
+                    <div class="form-group">
+                        <label for="order_noitification">{{ __('Notification') }}</label>
+                        <textarea class="form-control" name="notification" id="order_noitification">{{ __('Your order #:id is completed', ['id' => $order->id]) }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary">{{ __('Set the order completed') }}</button>
+                    </div>
+                </form>
+            </div>
+        @endif
 
         <div class="py-4 d-print-none">
             <a href="/orders" class="btn btn-info">{{ __('Back') }}</a>

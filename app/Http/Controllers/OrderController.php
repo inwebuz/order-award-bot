@@ -75,6 +75,7 @@ class OrderController extends Controller
             __('Product'),
             __('Quantity'),
             __('Products info'),
+            __('Photo'),
             __('Total'),
         ];
         $rowFromValues = WriterEntityFactory::createRowFromArray($values);
@@ -91,6 +92,7 @@ class OrderController extends Controller
                 $order->product->name,
                 $order->quantity,
                 $order->products_info,
+                ($order->image) ? Storage::disk('public')->url($order->image) : '',
                 $order->total,
             ];
             $rowFromValues = WriterEntityFactory::createRowFromArray($values);
@@ -186,6 +188,20 @@ class OrderController extends Controller
     public function show(Order $order)
     {
         return view('orders.show', compact('order'));
+    }
+
+    public function close(Request $request, Order $order)
+    {
+        $request->validate([
+            'notification' => 'required',
+        ]);
+        $order->status = Order::STATUS_CLOSE;
+        $order->save();
+
+        // send notification
+        Helper::toTelegram($request->input('notification'), null, $order->telegram_user_id);
+
+        return redirect($this->page)->with('success', 'Order closed');
     }
 
     /**

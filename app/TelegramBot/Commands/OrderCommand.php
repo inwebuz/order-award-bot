@@ -307,6 +307,7 @@ class OrderCommand extends UserCommand
 
                     // save to admin
                     $orderData = [
+                        'telegram_user_id' => $user_id,
                         'product_id' => $notes['product_id'],
                         'quantity' => $notes['quantity'],
                         'products_info' => $notes['products_info'],
