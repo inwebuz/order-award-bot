@@ -3,6 +3,7 @@
 namespace Longman\TelegramBot\Commands\UserCommands;
 
 use App\Helpers\BotHelper;
+use App\Helpers\Helper;
 use App\Order;
 use App\Product;
 use Illuminate\Support\Facades\Log;
@@ -157,11 +158,12 @@ class OrderCommand extends UserCommand
 
             // no break
             case 1:
-                if ($text === '') {
+                $photos = $message->getPhoto();
+                if ($text === '' && empty($photos)) {
                     $notes['state'] = 1;
                     $this->conversation->update();
 
-                    $data['text'] = BotHelper::t('Name of badges', $lang);
+                    $data['text'] = BotHelper::t('Write name of badges or send photo', $lang);
 
                     $buttons = [BotHelper::t('Button Back', $lang)];
                     $data['reply_markup'] = (new Keyboard (
@@ -175,7 +177,15 @@ class OrderCommand extends UserCommand
                     break;
                 }
 
-                $notes['products_info'] = $text;
+
+                if (!empty($photos)) {
+                    $photo = isset($photos[1]) ? $photos[1] : $photos[0];
+                    $notes['telegram_file_id'] = $photo->file_id;
+                    $notes['products_info'] = $message->getCaption() . ' + PHOTO';
+                } else {
+                    $notes['products_info'] = $text;
+                }
+
                 $text = '';
 
             // no break
@@ -318,8 +328,19 @@ class OrderCommand extends UserCommand
                         }
                         $order = Order::create($orderData);
 
+                        // save image if sent
+                        if (!empty($notes['telegram_file_id'])) {
+                            $photoFile = Request::getFile(['file_id' => $notes['telegram_file_id']])->getResult();
+                            Helper::downloadTelegramFile($photoFile, storage_path('app/public/orders/' . $order->id));
+                            $notes['image'] = 'orders/' . $order->id . '/' . $photoFile->getFilePath();
+                            $order->image = $notes['image'];
+                            $order->telegram_file_id = $notes['telegram_file_id'];
+                            $order->save();
+                        }
+
                         // send message to admins group
                         $adminChatID = config('services.telegram.chat_id');
+                        // $adminChatID = -483739234;
                         $adminMessage = '*' . BotHelper::t('New order', $lang) . '*' . "\n";
                         $adminMessage .= 'ID: ' . $order->id . "\n";
                         $adminMessage .= $this->getConfirmText($notes, $lang);

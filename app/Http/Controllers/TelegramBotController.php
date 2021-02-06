@@ -60,7 +60,7 @@ class TelegramBotController extends Controller
 //            $logger = new Logger($this->botname);
 //            TelegramLog::initialize($logger);
             // Set custom Upload and Download paths
-            //$telegram->setDownloadPath(__DIR__ . '/Download');
+            $telegram->setDownloadPath(storage_path('app/public/telegram'));
             //$telegram->setUploadPath(__DIR__ . '/Upload');
             // Here you can set some command specific parameters
             // e.g. Google geocode/timezone api key for /date command

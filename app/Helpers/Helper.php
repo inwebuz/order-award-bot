@@ -19,6 +19,7 @@ use Intervention\Image\Facades\Image;
 use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 use Illuminate\Support\Facades\DB;
 use GuzzleHttp\Client;
+use Longman\TelegramBot\Entities\File;
 
 class Helper
 {
@@ -183,6 +184,15 @@ class Helper
         return $model;
     }
 
+    private static function telegramClient()
+    {
+        $client = new Client([
+            'base_uri' => 'https://api.telegram.org',
+            'timeout'  => 2.0,
+        ]);
+        return $client;
+    }
+
     /**
      * Send message via telegram bot to group
      */
@@ -202,16 +212,38 @@ class Helper
         }
 
         try {
-            $client = new Client([
-                'base_uri' => 'https://api.telegram.org',
-                'timeout'  => 2.0,
-            ]);
+            $client = self::telegramClient();
 
             $client->post('/bot' . $token . '/sendMessage', [
                 'form_params' => $formData,
             ]);
         } catch (Exception $e) {
 
+        }
+    }
+
+    public static function downloadTelegramFile(File $file, $dir)
+    {
+        $tg_file_path = $file->getFilePath();
+        $file_path    = $dir . '/' . $tg_file_path;
+
+        $file_dir = dirname($file_path);
+        //For safety reasons, first try to create the directory, then check that it exists.
+        //This is in case some other process has created the folder in the meantime.
+        if (!@mkdir($file_dir, 0755, true) && !is_dir($file_dir)) {
+            throw new Exception('Directory ' . $file_dir . ' can\'t be created');
+        }
+
+        try {
+            $client = self::telegramClient();
+            $client->get(
+                '/file/bot' . config('services.telegram.bot_token') . '/' . $tg_file_path,
+                ['sink' => $file_path]
+            );
+
+            return filesize($file_path) > 0;
+        } catch (Exception $e) {
+            return false;
         }
     }
 
