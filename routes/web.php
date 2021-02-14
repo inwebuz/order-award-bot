@@ -25,6 +25,8 @@ Route::group(['middleware' => ['auth']], function () {
     // Route::resource('categories', 'CategoryController');
     Route::resource('products', 'ProductController');
     Route::get('profile', 'ProfileController@index')->name('profile.index');
+    Route::post('profile/update', 'ProfileController@update')->name('profile.update');
+    Route::post('profile/update/password', 'ProfileController@updatePassword')->name('profile.update.password');
     Route::post('orders/{order}/close', 'OrderController@close')->name('orders.close');
     Route::get('orders/download', 'OrderController@download')->name('orders.download');
     Route::get('orders/upload', 'OrderController@upload')->name('orders.upload');

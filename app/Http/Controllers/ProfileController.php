@@ -6,6 +6,7 @@ use App\Category;
 use App\Product;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -17,20 +18,27 @@ class ProfileController extends Controller
         return view('profile.index', compact('user'));
     }
 
+    public function update(Request $request)
+    {
+        // $request->validate([
+        //     'current_password' => ['required', ],
+        //     'new_password' => 'required|min:6|confirmed',
+        // ]);
+
+        // dd($request->all());
+
+        // return redirect()->route('profile.index')->withSuccess(__('Profile updated'));
+    }
+
     public function updatePassword(Request $request)
     {
-        $data = $this->validatedData($request);
-        $product = Product::findOrFail($productID);
-        // $urlImage = $request->file('image');
-        // if ($urlImage) {
-        //     // delete old image
-        //     if ($product->image) {
-        //         Storage::disk('public')->delete($product->image);
-        //     }
-        //     // save new image
-        //     $data['image'] = $urlImage->store('', 'public');
-        // }
-        $product->update($data);
-        return redirect($this->page)->with('success', 'Product saved');
+        $request->validate([
+            'current_password' => 'required|password',
+            'new_password' => 'required|min:6|confirmed',
+        ]);
+
+        auth()->user()->update(['password' => Hash::make($request->new_password)]);
+
+        return redirect()->route('profile.index')->withSuccess(__('Profile updated'));
     }
 }
