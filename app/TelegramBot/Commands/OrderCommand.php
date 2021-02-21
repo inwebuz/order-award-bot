@@ -159,11 +159,26 @@ class OrderCommand extends UserCommand
             // no break
             case 1:
                 $photos = $message->getPhoto();
-                if ($text === '' && empty($photos)) {
+                if (!isset($notes['telegram_file_id'])) {
+                    $notes['telegram_file_id'] = [];
+                }
+
+                if (!empty($photos)) {
+                    // Log::info(print_r($photos, 1));
+                    $photo = isset($photos[1]) ? $photos[1] : $photos[0];
+                    $notes['telegram_file_id'][] = $photo->file_id;
+                    // $notes['products_info'] = $message->getCaption() . ' + PHOTO';
+                    $this->conversation->update();
+                    // break; // message required
+                }
+
+                if ($text === '') {
                     $notes['state'] = 1;
                     $this->conversation->update();
 
-                    $data['text'] = BotHelper::t('Write name of badges or send photo', $lang);
+                    $data['text'] = BotHelper::t('Write name of badges or send photo', $lang) . "\n";
+                    // Log::info(print_r($notes['telegram_file_id'], 1));
+                    $data['text'] .= BotHelper::t('Photos attached', $lang) . ': ' . count($notes['telegram_file_id']);
 
                     $buttons = [BotHelper::t('Button Back', $lang)];
                     $data['reply_markup'] = (new Keyboard (
@@ -177,15 +192,7 @@ class OrderCommand extends UserCommand
                     break;
                 }
 
-
-                if (!empty($photos)) {
-                    $photo = isset($photos[1]) ? $photos[1] : $photos[0];
-                    $notes['telegram_file_id'] = $photo->file_id;
-                    $notes['products_info'] = $message->getCaption() . ' + PHOTO';
-                } else {
-                    $notes['products_info'] = $text;
-                }
-
+                $notes['products_info'] = $text;
                 $text = '';
 
             // no break
@@ -330,11 +337,18 @@ class OrderCommand extends UserCommand
                         $order = Order::create($orderData);
 
                         // save image if sent
-                        if (!empty($notes['telegram_file_id'])) {
-                            $photoFile = Request::getFile(['file_id' => $notes['telegram_file_id']])->getResult();
-                            Helper::downloadTelegramFile($photoFile, storage_path('app/public/orders/' . $order->id));
-                            $notes['image'] = 'orders/' . $order->id . '/' . $photoFile->getFilePath();
-                            $order->image = $notes['image'];
+                        if (!empty($notes['telegram_file_id']) && is_array($notes['telegram_file_id'])) {
+                            $additional_images = [];
+                            foreach ($notes['telegram_file_id'] as $key => $value) {
+                                $photoFile = Request::getFile(['file_id' => $value])->getResult();
+                                Helper::downloadTelegramFile($photoFile, storage_path('app/public/orders/' . $order->id));
+                                if ($key == 0) {
+                                    $order->image = 'orders/' . $order->id . '/' . $photoFile->getFilePath();
+                                } else {
+                                    $additional_images[] = 'orders/' . $order->id . '/' . $photoFile->getFilePath();
+                                }
+                            }
+                            $order->additional_images = $additional_images;
                             $order->telegram_file_id = $notes['telegram_file_id'];
                             $order->save();
                         }

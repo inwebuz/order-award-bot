@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddTelegramFileIdToOrdersTable extends Migration
+class AddAdditionalImagesToOrdersTable extends Migration
 {
     /**
      * Run the migrations.
@@ -14,7 +14,7 @@ class AddTelegramFileIdToOrdersTable extends Migration
     public function up()
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->text('telegram_file_id')->nullable();
+            $table->text('additional_images')->nullable();
         });
     }
 
@@ -26,7 +26,7 @@ class AddTelegramFileIdToOrdersTable extends Migration
     public function down()
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->dropColumn('telegram_file_id');
+            $table->dropColumn('additional_images');
         });
     }
 }

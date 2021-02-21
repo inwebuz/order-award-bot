@@ -82,9 +82,16 @@
                             <strong>{{ __('Photo') }}</strong>
                         </td>
                         <td>
-                            <a href="{{ Storage::url($order->image) }}" target="_blank">
+                            <a class="d-inline-block" href="{{ Storage::url($order->image) }}" target="_blank">
                                 <img src="{{ Storage::url($order->image) }}" alt="" style="max-width: 200px;" class="img-fluid">
                             </a>
+                            @if ($order->additional_images)
+                                @foreach ($order->getAdditionalImagesArray() as $image)
+                                    <a class="d-inline-block" href="{{ Storage::url($image) }}" target="_blank">
+                                        <img src="{{ Storage::url($image) }}" alt="" style="max-width: 200px;" class="img-fluid">
+                                    </a>
+                                @endforeach
+                            @endif
                         </td>
                     </tr>
                 @endif

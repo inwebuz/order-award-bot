@@ -30,4 +30,14 @@ class Order extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function getAdditionalImagesArray()
+    {
+        $images = [];
+        if ($this->additional_images) {
+            $data = utf8_encode($this->additional_images);
+            $images = json_decode($data, true);
+        }
+        return $images;
+    }
 }
